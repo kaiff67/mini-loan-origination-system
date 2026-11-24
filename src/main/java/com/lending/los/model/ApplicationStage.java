@@ -1,7 +1,7 @@
 package com.lending.los.model;
 
 /**
- * Workflow stages of the loan lifecycle as per Newgen Lending specification.
+ * Workflow stages of the loan lifecycle.
  * Normal Flow: DRAFT -> UNDER_REVIEW -> CREDIT_APPROVAL -> DISBURSEMENT -> CORE_BANKING_PUSH -> EXIT
  * Rejection: DRAFT / UNDER_REVIEW / CREDIT_APPROVAL -> REJECTED
  */

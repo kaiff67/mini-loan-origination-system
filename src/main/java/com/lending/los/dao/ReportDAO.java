@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Executes the 6 Parameterized SQL Reports required by the Newgen Campus specification.
+ * Executes parameterized analytical SQL queries for portfolio reporting and operational risk analysis.
  */
 public class ReportDAO {
 

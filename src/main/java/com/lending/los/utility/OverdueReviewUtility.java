@@ -20,13 +20,9 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Background utility that monitors pending loan reviews and exports a CSV report.
- * As required by business specification:
- * a) Uses ScheduledExecutorService.
- * b) Finds applications still in UNDER_REVIEW.
- * c) If waited > 2 calendar days, saves a REVIEW_OVERDUE alert (persistent, no duplicates).
- * d) Exports pending reviews to CSV (e.g. pending_reviews_20261026.csv) with OverdueFlag = Yes/No.
- * e) Exposes "Run Utility Now" option using identical logic.
+ * Asynchronous background monitor that tracks loan applications exceeding review SLAs.
+ * Periodically scans for applications pending review beyond 2 calendar days,
+ * creates persistent system alerts, and generates operational CSV exports.
  */
 public class OverdueReviewUtility {
 

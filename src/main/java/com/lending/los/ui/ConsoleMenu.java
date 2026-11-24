@@ -15,7 +15,7 @@ import java.util.List;
 import java.util.Scanner;
 
 /**
- * Menu-driven interactive Console Application for Newgen Loan Origination System.
+ * Interactive Console Interface for Loan Origination System.
  */
 public class ConsoleMenu {
 
@@ -46,9 +46,11 @@ public class ConsoleMenu {
             System.out.println(" 8. Six SQL Analytics Reports");
             System.out.println(" 9. Background Utilities & Alerts");
             System.out.println("10. Test Scenarios (Date Simulation & Controlled Rollback)");
+            System.out.println("11. Automated Test & Verification Suite (12 Scenarios)");
+            System.out.println("12. Reset Database to Baseline Seed");
             System.out.println(" 0. Exit Application");
             System.out.println("================================================================================");
-            System.out.print("Enter your choice [0-10]: ");
+            System.out.print("Enter your choice [0-12]: ");
             System.out.flush();
 
             if (!scanner.hasNextLine()) break;
@@ -66,11 +68,13 @@ public class ConsoleMenu {
                     case "8" -> reportsMenu();
                     case "9" -> utilitiesMenu();
                     case "10" -> testScenariosMenu();
+                    case "11" -> runAutoTests();
+                    case "12" -> resetDatabase();
                     case "0" -> {
                         System.out.println("\nExiting Loan Origination System. Goodbye!");
                         return;
                     }
-                    default -> System.out.println("[WARN] Invalid option. Please select 0-10.");
+                    default -> System.out.println("[WARN] Invalid option. Please select 0-12.");
                 }
             } catch (Exception e) {
                 System.out.println("\n[ERROR] " + e.getMessage());
@@ -233,6 +237,13 @@ public class ConsoleMenu {
         System.out.println("Disbursed Amount : INR " + FinancialCalculator.formatIndianCurrency(d.getAmount()));
         System.out.println("Disbursed At     : " + d.getDisbursedAt());
         System.out.println("Application Stage: DISBURSEMENT (will be picked by CoreDataPush to move to EXIT)");
+
+        try {
+            LoanApplication app = loanApplicationDAO.findById(appId).orElseThrow();
+            Customer cust = customerDAO.findById(app.getCustomerId()).orElseThrow();
+            File docket = DocumentGeneratorService.generateSanctionDocket(cust, app);
+            System.out.println("Official Sanction Docket generated at: " + docket.getAbsolutePath());
+        } catch (Exception ignored) {}
     }
 
     private void reportsMenu() throws Exception {
@@ -312,7 +323,7 @@ public class ConsoleMenu {
 
     private void testScenariosMenu() {
         System.out.println("\n================================================================================");
-        System.out.println("             TEST SCENARIOS & DATE SIMULATION (SLIDE 13)");
+        System.out.println("                     TEST SCENARIOS & DATE SIMULATION");
         System.out.println("================================================================================");
         System.out.println("1. Advance Business Date by Days (e.g. simulate 2 or 3 days aging)");
         System.out.println("2. Set Explicit Business Date (YYYY-MM-DD)");
@@ -341,6 +352,33 @@ public class ConsoleMenu {
                     System.out.println("\n[DEMO VERIFIED] Scenario 09 PASSED! Controlled failure triggered rollback successfully.");
                 }
             }
+        }
+    }
+
+    private void runAutoTests() {
+        System.out.println("\n================================================================================");
+        System.out.println("                AUTOMATED SYSTEM VERIFICATION SUITE");
+        System.out.println("================================================================================");
+        System.out.println("Executing automated test suite against baseline database...");
+        com.lending.los.AutoTestRunner.TestSuiteSummary summary = com.lending.los.AutoTestRunner.runAllTests();
+        System.out.println(summary.getFormattedSummaryTable());
+    }
+
+    private void resetDatabase() {
+        System.out.println("\n================================================================================");
+        System.out.println("                      DATABASE SEED RESET");
+        System.out.println("================================================================================");
+        System.out.print("Are you sure you want to restore the database to baseline seed data? (Y/N): ");
+        String confirm = scanner.nextLine().trim();
+        if ("Y".equalsIgnoreCase(confirm)) {
+            boolean ok = DatabaseResetService.resetToBenchmark();
+            if (ok) {
+                System.out.println("\n[SUCCESS] Database cleanly reset to original baseline state!");
+            } else {
+                System.out.println("\n[ERROR] Database reset failed. Check console error messages.");
+            }
+        } else {
+            System.out.println("Reset cancelled.");
         }
     }
 }

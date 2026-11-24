@@ -9,7 +9,7 @@ import java.util.Locale;
 
 /**
  * High-precision financial calculator for EMI and FOIR computations.
- * Implements exact business formulas as defined in business specification:
+ * Implements standard reducing-balance compound interest and debt-to-income affordability calculations:
  *
  * EMI = P * r * (1+r)^n / ((1+r)^n - 1)
  * FOIR = (existing_obligations + rounded_EMI) / monthly_income * 100

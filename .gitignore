@@ -26,3 +26,4 @@ Thumbs.db
 # Runtime generated reports & documents
 reports_export/
 generated_documents/
+lib/

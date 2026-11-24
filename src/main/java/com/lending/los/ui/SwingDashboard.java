@@ -1,5 +1,6 @@
 package com.lending.los.ui;
 
+import com.lending.los.AutoTestRunner;
 import com.lending.los.dao.*;
 import com.lending.los.model.*;
 import com.lending.los.service.*;
@@ -19,8 +20,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 /**
- * User-friendly, clean Desktop GUI built with pure standard Java Swing.
- * Designed for effortless evaluation demonstrations.
+ * Interactive Graphical Desktop Dashboard built with pure standard Java Swing.
+ * Provides complete visibility into customer profiles, loan pipelines, reports, and background daemons.
  */
 public class SwingDashboard extends JFrame {
 
@@ -38,10 +39,11 @@ public class SwingDashboard extends JFrame {
     private JTable tblApplications;
     private DefaultTableModel modelApplications;
 
-    // Tab 3 Components (Reports)
+    // Tab 3 Components (Reports & Visual Chart)
     private JComboBox<String> cmbReportSelect;
     private JTable tblReportOutput;
     private DefaultTableModel modelReportOutput;
+    private PipelineChartPanel pipelineChartPanel;
 
     public SwingDashboard(OverdueReviewUtility overdueUtility, CoreDataPushUtility corePushUtility) {
         this.overdueUtility = overdueUtility;
@@ -77,7 +79,7 @@ public class SwingDashboard extends JFrame {
         tabbedPane.addTab("  📊 1. All Loans & Actions  ", createApplicationsTab());
         tabbedPane.addTab("  ➕ 2. Apply for New Loan  ", createNewLoanTab());
         tabbedPane.addTab("  📈 3. Six Bank Reports  ", createReportsTab());
-        tabbedPane.addTab("  ⚙️ 4. Background Robots & Demos  ", createUtilitiesTab());
+        tabbedPane.addTab("  ⚙️ 4. Background Daemons & Diagnostics  ", createUtilitiesTab());
 
         root.add(tabbedPane, BorderLayout.CENTER);
 
@@ -174,10 +176,15 @@ public class SwingDashboard extends JFrame {
         btnReview.setToolTipText("Credit Officer decision for UNDER_REVIEW loan. Requires reason if rejected.");
         btnReview.addActionListener(e -> handleActionReview());
 
-        JButton btnDoc = new JButton("3. 📄 Generate Official Form");
+        JButton btnDoc = new JButton("3. 📄 Application Form");
         btnDoc.setFont(new Font("Segoe UI", Font.BOLD, 12));
         btnDoc.setToolTipText("Generates physical stamped Application Form document on disk.");
         btnDoc.addActionListener(e -> handleActionGenerateDoc());
+
+        JButton btnSanction = new JButton("3b. 📜 Sanction Docket");
+        btnSanction.setFont(new Font("Segoe UI", Font.BOLD, 12));
+        btnSanction.setToolTipText("Generates official Sanction Advice Docket with 3-Month Amortization Schedule.");
+        btnSanction.addActionListener(e -> handleActionGenerateSanctionDocket());
 
         JButton btnDisburse = new JButton("4. 💰 Disburse Money");
         btnDisburse.setFont(new Font("Segoe UI", Font.BOLD, 12));
@@ -190,6 +197,7 @@ public class SwingDashboard extends JFrame {
         actionsBar.add(btnSubmit);
         actionsBar.add(btnReview);
         actionsBar.add(btnDoc);
+        actionsBar.add(btnSanction);
         actionsBar.add(btnDisburse);
         actionsBar.add(btnRefresh);
 
@@ -374,7 +382,7 @@ public class SwingDashboard extends JFrame {
     }
 
     // -------------------------------------------------------------------------
-    // Tab 3: Six SQL Analytics Reports
+    // Tab 3: Six SQL Analytics Reports & Visual Pipeline Chart
     // -------------------------------------------------------------------------
     private JPanel createReportsTab() {
         JPanel panel = new JPanel(new BorderLayout(10, 10));
@@ -403,9 +411,16 @@ public class SwingDashboard extends JFrame {
         btnRunReport.setForeground(Color.WHITE);
         btnRunReport.addActionListener(e -> executeSelectedReport());
 
+        JButton btnRefreshChart = new JButton("🔄 Refresh Chart");
+        btnRefreshChart.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        btnRefreshChart.addActionListener(e -> {
+            if (pipelineChartPanel != null) pipelineChartPanel.refreshData();
+        });
+
         topBar.add(lblChoose);
         topBar.add(cmbReportSelect);
         topBar.add(btnRunReport);
+        topBar.add(btnRefreshChart);
 
         panel.add(topBar, BorderLayout.NORTH);
 
@@ -416,72 +431,94 @@ public class SwingDashboard extends JFrame {
         tblReportOutput.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         tblReportOutput.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
 
-        panel.add(new JScrollPane(tblReportOutput), BorderLayout.CENTER);
+        pipelineChartPanel = new PipelineChartPanel();
+
+        JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT,
+                new JScrollPane(tblReportOutput), pipelineChartPanel);
+        splitPane.setResizeWeight(0.5);
+        splitPane.setDividerLocation(200);
+        splitPane.setBorder(null);
+
+        panel.add(splitPane, BorderLayout.CENTER);
         return panel;
     }
 
     // -------------------------------------------------------------------------
-    // Tab 4: Background Robots & Simulation
+    // Tab 4: Background Daemons & Diagnostics
     // -------------------------------------------------------------------------
     private JPanel createUtilitiesTab() {
-        JPanel panel = new JPanel(new GridLayout(2, 2, 15, 15));
-        panel.setBorder(new EmptyBorder(15, 15, 15, 15));
+        JPanel panel = new JPanel(new GridLayout(2, 3, 12, 12));
+        panel.setBorder(new EmptyBorder(12, 12, 12, 12));
 
-        // Card 1: Overdue Watchdog
-        JPanel card1 = createUtilCard("⏰ Robot 1: Overdue Review Watchdog",
-                "Automatically checks for loans in UNDER_REVIEW older than 2 calendar days.\n" +
-                "• Creates alert in database.\n• Exports a daily CSV spreadsheet for managers.\n• Guarantees ZERO duplicate alerts.",
-                "▶ Run Overdue Watchdog Now", () -> {
+        // Card 1: Overdue Review Monitor
+        JPanel card1 = createUtilCard("⏰ Daemon 1: Overdue Review Monitor",
+                "Monitors applications in UNDER_REVIEW exceeding 2 calendar days.\n" +
+                "• Persists system alerts in database.\n• Generates operational CSV report.\n• Enforces idempotent alerts.",
+                "▶ Run Overdue Monitor Now", () -> {
                     OverdueReviewUtility.UtilityRunResult res = overdueUtility.executeUtility();
-                    String msg = "Watchdog Run Finished!\n" +
+                    String msg = "Overdue Monitor Run Finished!\n" +
                             "• Applications Scanned: " + res.applicationsProcessed + "\n" +
                             "• Overdue Alerts Created: " + res.alertsCreated + "\n" +
-                            (res.csvFile != null ? "• CSV Spreadsheet Exported: " + res.csvFile.getName() : "");
+                            (res.csvFile != null ? "• CSV Report Exported: " + res.csvFile.getName() : "");
                     JOptionPane.showMessageDialog(this, msg, "Overdue Review Result", JOptionPane.INFORMATION_MESSAGE);
                 });
 
-        // Card 2: Core Banking Sync
-        JPanel card2 = createUtilCard("🔄 Robot 2: Core Banking Synchronizer",
-                "Continuously running background worker.\n" +
-                "• Grabs all loans that completed DISBURSEMENT.\n" +
-                "• Pushes applicant and loan details into external table NG_CORE_BANKING.\n" +
-                "• Moves loan stage to EXIT automatically.",
+        // Card 2: Core Banking Synchronizer
+        JPanel card2 = createUtilCard("🔄 Daemon 2: Core Banking Synchronizer",
+                "Continuously running background worker thread.\n" +
+                "• Polls loans in DISBURSEMENT stage.\n" +
+                "• Inserts applicant and credit terms into NG_CORE_BANKING.\n" +
+                "• Transitions loan to final terminal EXIT stage.",
                 "▶ Run Core Banking Push Now", () -> {
                     int count = corePushUtility.pushDisbursedCasesToCoreBanking();
                     refreshApplicationsTable();
-                    JOptionPane.showMessageDialog(this, "Core Banking Push Finished!\n" + count + " case(s) pushed to Core Banking table and transitioned to EXIT.", "Core Banking Sync", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(this, "Core Banking Sync Finished!\n" + count + " case(s) pushed to Core Banking table and transitioned to EXIT.", "Core Banking Sync", JOptionPane.INFORMATION_MESSAGE);
                 });
 
-        // Card 3: Date Simulation
-        JPanel card3 = createUtilCard("📅 Examiner Date Simulation",
-                "Allows advancing business date to demonstrate review aging without waiting in real-time.\n" +
-                "• Test: 2 days old = Not Overdue.\n" +
-                "• Test: 3 days old = Overdue alert raised!",
+        // Card 3: Automated Test Suite (12 Scenarios)
+        JPanel card3 = createUtilCard("🏆 Automated Test Suite (12 Scenarios)",
+                "Programmatically executes 12 system verification scenarios in ~1.2s.\n" +
+                "• Validates EMIs, FOIR <= 50% vs > 50%.\n• Validates Age Boundaries 20, 21, 60, 61.\n• Validates Duplicate Loans, Rollback & Daemons.",
+                "⚡ Run Automated Test Suite", this::handleRunAutoTests);
+
+        // Card 4: Date Simulation
+        JPanel card4 = createUtilCard("📅 Logical Date Simulation",
+                "Simulates business date progression to test review aging without waiting in real-time.\n" +
+                "• Test: 2 days old = Within SLA.\n" +
+                "• Test: 3 days old = Overdue alert triggered!",
                 "⏩ Advance Date by +3 Days", () -> {
                     BusinessDateService.advanceDays(3);
                     lblCurrentDate.setText("📅 Date: " + BusinessDateService.getFormattedBusinessDate());
                     JOptionPane.showMessageDialog(this, "Business date advanced by +3 days!\nNew simulated date: " +
-                            BusinessDateService.getFormattedBusinessDate() + "\nNow run Robot 1 to see overdue loans flagged!", "Date Advanced", JOptionPane.INFORMATION_MESSAGE);
+                            BusinessDateService.getFormattedBusinessDate() + "\nNow run Overdue Monitor to observe flagged loans.", "Date Advanced", JOptionPane.INFORMATION_MESSAGE);
                 });
 
-        // Card 4: Rollback Test (Scenario 09)
-        JPanel card4 = createUtilCard("🛡️ Scenario 09: Transaction Rollback Demo",
-                "Demonstrates enterprise ACID transaction protection.\n" +
-                "• Intentionally simulates a database error during a multi-table update.\n" +
-                "• Proves that zero corrupt or partial data is committed.",
+        // Card 5: Rollback Test (Scenario 09)
+        JPanel card5 = createUtilCard("🛡️ ACID Transaction Rollback Test",
+                "Demonstrates multi-table ACID transaction integrity.\n" +
+                "• Simulates a controlled database failure during multi-table update.\n" +
+                "• Proves explicit rollback preserves zero corrupted records.",
                 "🧪 Test Controlled Rollback", () -> {
                     boolean ok = workflowService.demonstrateControlledRollback(1L);
                     if (ok) {
-                        JOptionPane.showMessageDialog(this, "SCENARIO 09 VERIFIED PASSED!\n" +
+                        JOptionPane.showMessageDialog(this, "TRANSACTION ROLLBACK VERIFIED!\n" +
                                 "Simulated database failure caught successfully.\n" +
                                 "Explicit rollback executed. Zero records corrupted!", "Transaction Rollback Verified", JOptionPane.INFORMATION_MESSAGE);
                     }
                 });
 
+        // Card 6: Database Reset to Baseline Seed
+        JPanel card6 = createUtilCard("🔄 Reset DB to Baseline Seed",
+                "Restores clean baseline data (re-executes schema.sql & seed_data.sql).\n" +
+                "• Resets database to original 5 customers & seed loans.\n• Ensures clean state for repeat test runs.",
+                "⚠️ Reset Database Now", this::handleResetDatabase);
+
         panel.add(card1);
         panel.add(card2);
         panel.add(card3);
         panel.add(card4);
+        panel.add(card5);
+        panel.add(card6);
         return panel;
     }
 
@@ -620,6 +657,28 @@ public class SwingDashboard extends JFrame {
         }
     }
 
+    private void handleActionGenerateSanctionDocket() {
+        LoanApplication app = getSelectedApplication();
+        if (app == null) return;
+
+        if (app.getStatus() != ApplicationStage.CREDIT_APPROVAL &&
+            app.getStatus() != ApplicationStage.DISBURSEMENT &&
+            app.getStatus() != ApplicationStage.CORE_BANKING_PUSH &&
+            app.getStatus() != ApplicationStage.EXIT) {
+            JOptionPane.showMessageDialog(this, "Sanction Letter Docket is available for approved, disbursed or completed loans.\nCurrent status: " + app.getStatus(), "Action Not Allowed", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        try {
+            Customer c = customerDAO.findById(app.getCustomerId()).orElseThrow();
+            File doc = DocumentGeneratorService.generateSanctionDocket(c, app);
+            JOptionPane.showMessageDialog(this, "📜 Official Sanction Advice Docket successfully generated!\n" +
+                    "Includes 3-Month Amortization Schedule & Digital Seal.\nSaved at:\n" + doc.getAbsolutePath(), "Sanction Docket Generated", JOptionPane.INFORMATION_MESSAGE);
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error generating sanction docket: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
     private void handleActionDisburse() {
         LoanApplication app = getSelectedApplication();
         if (app == null) return;
@@ -638,7 +697,7 @@ public class SwingDashboard extends JFrame {
                         "• Amount: INR " + FinancialCalculator.formatIndianCurrency(d.getAmount()) + "\n" +
                         "• Reference: " + d.getReferenceNumber() + "\n" +
                         "• Status moved to: DISBURSEMENT\n\n" +
-                        "(Robot 2 will automatically sync this to Core Banking and move to EXIT)", "Disbursement Completed", JOptionPane.INFORMATION_MESSAGE);
+                        "(Background daemon will automatically sync this to Core Banking and move to EXIT)", "Disbursement Completed", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(this, "Disbursement failed: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
@@ -678,6 +737,45 @@ public class SwingDashboard extends JFrame {
             }
         } catch (SQLException e) {
             JOptionPane.showMessageDialog(this, "Error fetching loans: " + e.getMessage(), "Database Error", JOptionPane.ERROR_MESSAGE);
+        }
+        if (pipelineChartPanel != null) {
+            pipelineChartPanel.refreshData();
+        }
+    }
+
+    private void handleRunAutoTests() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Run 12-point Automated System Verification Suite?\n(Note: Programmatically validates core rules and resets database to baseline seed.)",
+                "Start Automated Verification", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        if (confirm != JOptionPane.YES_OPTION) return;
+
+        AutoTestRunner.TestSuiteSummary summary = AutoTestRunner.runAllTests();
+        refreshApplicationsTable();
+
+        JTextArea textArea = new JTextArea(summary.getFormattedSummaryTable());
+        textArea.setFont(new Font("Consolas", Font.PLAIN, 12));
+        textArea.setEditable(false);
+        JScrollPane scroll = new JScrollPane(textArea);
+        scroll.setPreferredSize(new Dimension(860, 420));
+
+        JOptionPane.showMessageDialog(this, scroll,
+                "Automated Verification Suite - " + summary.passedCount + "/" + summary.totalCount + " Passed (" + summary.durationMs + " ms)",
+                JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private void handleResetDatabase() {
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "Are you sure you want to restore the database to baseline seed data?\nThis re-executes schema.sql and seed_data.sql.",
+                "Confirm Baseline Reset", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            boolean ok = DatabaseResetService.resetToBenchmark();
+            refreshApplicationsTable();
+            lblCurrentDate.setText("📅 Date: " + BusinessDateService.getFormattedBusinessDate());
+            if (ok) {
+                JOptionPane.showMessageDialog(this, "Database successfully restored to clean benchmark data!", "Database Reset Complete", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this, "Failed to reset database. Check console logs.", "Reset Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 

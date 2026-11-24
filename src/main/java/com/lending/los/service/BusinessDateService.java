@@ -6,10 +6,8 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
 /**
- * Service to manage configurable business dates.
- * As required by business specification:
- * "Use INR and a configurable business date, defaulting to today.
- *  Business timestamps use that date with the current time."
+ * Manages the application's logical business date.
+ * Allows deterministic simulated time progression for loan aging and SLA monitoring.
  */
 public class BusinessDateService {
 

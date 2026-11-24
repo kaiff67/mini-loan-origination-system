@@ -65,7 +65,7 @@ public class CustomerDAO {
     }
 
     /**
-     * Searches customers by ID, name, or mobile (as per Page 2 requirement).
+     * Searches customers by ID, name, or mobile.
      */
     public List<Customer> searchCustomers(String query) throws SQLException {
         List<Customer> list = new ArrayList<>();
